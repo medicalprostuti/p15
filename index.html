@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ১ম অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "একটি হাতঘড়ির মিনিটের কাঁটার কৌণিক বেগ কত?",
+          options: {
+            A: "π/1800 rads⁻¹",
+            B: "π/3600 rads⁻¹",
+            C: "30/1800 rads⁻¹",
+            D: "2π rads⁻¹",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি হাতঘড়ির মিনিটের কাঁটা এক পূর্ণ ঘূর্ণন (একটি বৃত্তাকার পথ) সম্পন্ন করতে 60 মিনিট সময় নেয়।</p> <ul> <li>আমরা জানি, 1 মিনিট = 60 সেকেন্ড। সুতরাং, 60 মিনিট = 60 x 60 = 3600 সেকেন্ড।</li> <li>একটি পূর্ণ ঘূর্ণন মানে 360 ডিগ্রি বা 2π রেডিয়ান কৌণিক সরণ।</li> <li>কৌণিক বেগ (ω) = কৌণিক সরণ / সময়।</li> <li>অতএব, মিনিটের কাঁটার কৌণিক বেগ হবে: ω = 2π রেডিয়ান / 3600 সেকেন্ড = π/1800 rads⁻¹।</li> </ul> <p>সুতরাং, সঠিক উত্তর হলো (A) π/1800 rads⁻¹।</p>",
+        },
+        {
+          id: 2,
+          question: "একটি ঘড়ির মিনিটের কাঁটার কম্পাঙ্ক কত?",
+          options: {
+            A: "2.78 Hz",
+            B: "2.78 × 10⁻¹ Hz",
+            C: "2.78 × 10⁻² Hz",
+            D: "2.78 × 10⁻⁴ Hz",
+          },
+          correct: "D",
+          explanation:
+            "<p>কম্পাঙ্ক (Frequency) হলো প্রতি সেকেন্ডে সম্পন্ন পূর্ণ ঘূর্ণনের সংখ্যা, যা পর্যায়কালের (Time period) ব্যস্তানুপাতিক।</p> <ul> <li>একটি ঘড়ির মিনিটের কাঁটা এক পূর্ণ ঘূর্ণন সম্পন্ন করতে 60 মিনিট সময় নেয়।</li> <li>পর্যায়কাল (T) = 60 মিনিট = 60 x 60 সেকেন্ড = 3600 সেকেন্ড।</li> <li>কম্পাঙ্ক (f) = 1 / T</li> <li>সুতরাং, f = 1 / 3600 Hz</li> <li>f ≈ 0.0002777 Hz</li> <li>f ≈ 2.78 x 10⁻⁴ Hz।</li> </ul> <p>অতএব, সঠিক উত্তর হলো (D) 2.78 × 10⁻⁴ Hz।</p>",
+        },
+        {
+          id: 3,
+          question: "1 rps = ?",
+          options: {
+            A: "π/2 rads⁻¹",
+            B: "π rads⁻¹",
+            C: "2π rads⁻¹",
+            D: "4π rads⁻¹",
+          },
+          correct: "C",
+          explanation:
+            "<p>rps (revolution per second) হলো প্রতি সেকেন্ডে কতবার একটি বস্তু পূর্ণ ঘূর্ণন সম্পন্ন করে তার পরিমাপ।</p> <ul> <li>আমরা জানি, 1টি পূর্ণ ঘূর্ণন 360 ডিগ্রি বা 2π রেডিয়ানের সমান।</li> <li>সুতরাং, 1 rps মানে প্রতি সেকেন্ডে 2π রেডিয়ান কৌণিক সরণ হয়।</li> <li>অতএব, 1 rps = 2π rads⁻¹।</li> </ul> <p>সঠিক উত্তর হলো (C) 2π rads⁻¹।</p>",
+        },
+        {
+          id: 4,
+          question: "একটি ঘড়ির সেকেন্ডের কাঁটার কৌণিক কম্পাঙ্ক কত হবে?",
+          options: {
+            A: "1.0 rev/s",
+            B: "0.104",
+            C: "0.5 rev/s",
+            D: "60.0 rev/s",
+          },
+          correct: "B",
+          explanation:
+            "<p>এখানে 'কৌণিক কম্পাঙ্ক' বলতে সাধারণত কৌণিক বেগকেই বোঝানো হয়, যা রেডিয়ান প্রতি সেকেন্ডে (rad/s) প্রকাশ করা হয়। যদিও অপশনে একক ছাড়া একটি সংখ্যা আছে, এটি কৌণিক বেগের মানকে নির্দেশ করে।</p> <ul> <li>একটি ঘড়ির সেকেন্ডের কাঁটা এক পূর্ণ ঘূর্ণন (2π রেডিয়ান) সম্পন্ন করতে 60 সেকেন্ড সময় নেয়।</li> <li>কৌণিক বেগ (ω) = কৌণিক সরণ / সময়।</li> <li>ω = 2π রেডিয়ান / 60 সেকেন্ড = π/30 rads⁻¹।</li> <li>যদি আমরা π এর আনুমানিক মান 3.1416 ব্যবহার করি:</li> <li>ω ≈ 3.1416 / 30 rads⁻¹ ≈ 0.10472 rads⁻¹।</li> </ul> <p>প্রদত্ত অপশনগুলোর মধ্যে (B) 0.104 এই মানের সবচেয়ে কাছাকাছি।</p>",
+        },
+        {
+          id: 5,
+          question: "এক রেডিয়ান কোনটির প্রায় সমান?",
+          options: {
+            A: "10°",
+            B: "50.3°",
+            C: "120°",
+            D: "57.3°",
+          },
+          correct: "D",
+          explanation:
+            "<p>ডিগ্রি এবং রেডিয়ানের মধ্যে সম্পর্ক হলো:</p> <ul> <li>2π রেডিয়ান = 360 ডিগ্রি।</li> <li>সুতরাং, 1 রেডিয়ান = 360 / (2π) ডিগ্রি।</li> <li>1 রেডিয়ান = 180 / π ডিগ্রি।</li> <li>π এর আনুমানিক মান 3.14159 ব্যবহার করে:</li> <li>1 রেডিয়ান ≈ 180 / 3.14159 ডিগ্রি ≈ 57.2958 ডিগ্রি।</li> </ul> <p>এই মানটি প্রায় 57.3 ডিগ্রির সমান।</p>",
+        },
+        {
+          id: 6,
+          question: "একটি ঘড়ির সেকেন্ডের কাঁটার কৌণিক বেগ কত?",
+          options: {
+            A: "π rads⁻¹",
+            B: "π/30 rads⁻¹",
+            C: "π/360 rads⁻¹",
+            D: "2π rads⁻¹",
+          },
+          correct: "B",
+          explanation:
+            "<p>একটি ঘড়ির সেকেন্ডের কাঁটা এক পূর্ণ ঘূর্ণন (একটি বৃত্তাকার পথ) সম্পন্ন করতে 60 সেকেন্ড সময় নেয়।</p> <ul> <li>একটি পূর্ণ ঘূর্ণন মানে 360 ডিগ্রি বা 2π রেডিয়ান কৌণিক সরণ।</li> <li>কৌণিক বেগ (ω) = কৌণিক সরণ / সময়।</li> <li>অতএব, সেকেন্ডের কাঁটার কৌণিক বেগ হবে: ω = 2π রেডিয়ান / 60 সেকেন্ড = π/30 rads⁻¹।</li> </ul> <p>সুতরাং, সঠিক উত্তর হলো (B) π/30 rads⁻¹।</p>",
+        },
+        {
+          id: 7,
+          question: "কৌণিক বেগের মাত্রা কোনটি?",
+          options: {
+            A: "MLT⁻¹",
+            B: "M⁻¹L⁰T⁻¹",
+            C: "M⁻¹L⁻¹T⁻¹",
+            D: "M⁰L⁰T⁻¹",
+          },
+          correct: "D",
+          explanation:
+            "<p>কৌণিক বেগ (ω) হলো কৌণিক সরণ (Δθ) কে সময় (Δt) দিয়ে ভাগ করলে যা পাওয়া যায়:</p> <ul> <li>ω = Δθ / Δt।</li> <li>কৌণিক সরণ (Δθ) একটি কোণ, যা রেডিয়ান এককে প্রকাশ করা হয়। রেডিয়ান একটি মাত্রাহীন রাশি, কারণ এটি দুটি দৈর্ঘ্যের অনুপাত (চাপের দৈর্ঘ্য / ব্যাসার্ধ)। সুতরাং, এর কোনো মাত্রা নেই।</li> <li>সময়ের (Δt) মাত্রা হলো [T]।</li> <li>অতএব, কৌণিক বেগের মাত্রা [ω] = [1] / [T] = [T⁻¹]।</li> <li>পদার্থবিজ্ঞানের মাত্রার ক্ষেত্রে, ভর (M) এবং দৈর্ঘ্য (L) এর ঘাত শূন্য (0) দিয়ে দেখানো হয় যদি তাদের উপর কোনো নির্ভরতা না থাকে।</li> <li>সুতরাং, কৌণিক বেগের মাত্রা হলো M⁰L⁰T⁻¹।</li> </ul> <p>সঠিক উত্তর হলো (D) M⁰L⁰T⁻¹।</p>",
+        },
+        {
+          id: 8,
+          question: "কৌণিক ত্বরণের মাত্রা কোনটি?",
+          options: {
+            A: "M⁰L⁰T⁻¹",
+            B: "M⁻¹L⁰T⁻¹",
+            C: "M⁰L⁰T⁻²",
+            D: "M⁻¹L⁻¹T⁻²",
+          },
+          correct: "C",
+          explanation:
+            "<p>কৌণিক ত্বরণ (α) হলো কৌণিক বেগের পরিবর্তন (Δω) কে সময় (Δt) দিয়ে ভাগ করলে যা পাওয়া যায়:</p> <ul> <li>α = Δω / Δt।</li> <li>আমরা জানি, কৌণিক বেগের মাত্রা [ω] = [T⁻¹]।</li> <li>সময়ের (Δt) মাত্রা হলো [T]।</li> <li>অতএব, কৌণিক ত্বরণের মাত্রা [α] = [T⁻¹] / [T] = [T⁻²]।</li> <li>পদার্থবিজ্ঞানের মাত্রার ক্ষেত্রে, ভর (M) এবং দৈর্ঘ্য (L) এর ঘাত শূন্য (0) দিয়ে দেখানো হয় যদি তাদের উপর কোনো নির্ভরতা না থাকে।</li> <li>সুতরাং, কৌণিক ত্বরণের মাত্রা হলো M⁰L⁰T⁻²।</li> </ul> <p>সঠিক উত্তর হলো (C) M⁰L⁰T⁻²।</p>",
+        },
+        {
+          id: 9,
+          question: "রৈখিক ত্বরণ ও কৌণিক ত্বরণের সম্পর্ক কোনটি?",
+          options: {
+            A: "a = α/T",
+            B: "a = α/r",
+            C: "a = r²α",
+            D: "a = rα",
+          },
+          correct: "D",
+          explanation:
+            "<p>বৃত্তাকার গতিতে, একটি বস্তুর রৈখিক ত্বরণ (tangential acceleration, a) এবং কৌণিক ত্বরণ (angular acceleration, α) এর মধ্যে একটি নির্দিষ্ট সম্পর্ক বিদ্যমান। এই সম্পর্কটি বৃত্তাকার পথের ব্যাসার্ধের (r) মাধ্যমে প্রকাশ করা হয়।</p> <ul> <li>আমরা জানি, রৈখিক বেগ (v) এবং কৌণিক বেগ (ω) এর মধ্যে সম্পর্ক হলো v = rω।</li> <li>রৈখিক ত্বরণ (a) হলো সময়ের সাপেক্ষে রৈখিক বেগের পরিবর্তনের হার, অর্থাৎ a = dv/dt।</li> <li>কৌণিক ত্বরণ (α) হলো সময়ের সাপেক্ষে কৌণিক বেগের পরিবর্তনের হার, অর্থাৎ α = dω/dt।</li> <li>এখন, v = rω কে সময়ের সাপেক্ষে অন্তরীকরণ করলে পাই:</li> <li>dv/dt = d(rω)/dt</li> <li>যেহেতু r ধ্রুবক (বৃত্তাকার গতিতে ব্যাসার্ধ পরিবর্তন হয় না),</li> <li>a = r (dω/dt)</li> <li>সুতরাং, a = rα।</li> </ul> <p>এই সমীকরণটি দেখায় যে, রৈখিক ত্বরণ কৌণিক ত্বরণ এবং ব্যাসার্ধের গুণফলের সমান।</p>",
+        },
+        {
+          id: 10,
+          question: "ঘড়ির ঘণ্টার কাঁটার কৌণিক বেগ কত?",
+          options: {
+            A: "π/30 rads⁻¹",
+            B: "π/30 rad min⁻¹",
+            C: "π/360 rad min⁻¹",
+            D: "720/π rad min⁻¹",
+          },
+          correct: "C",
+          explanation:
+            "<p>একটি ঘড়ির ঘণ্টার কাঁটা এক পূর্ণ ঘূর্ণন (একটি বৃত্তাকার পথ) সম্পন্ন করতে 12 ঘণ্টা সময় নেয়।</p> <ul> <li>আমরা জানি, 1 ঘণ্টা = 60 মিনিট। সুতরাং, 12 ঘণ্টা = 12 x 60 = 720 মিনিট।</li> <li>একটি পূর্ণ ঘূর্ণন মানে 360 ডিগ্রি বা 2π রেডিয়ান কৌণিক সরণ।</li> <li>কৌণিক বেগ (ω) = কৌণিক সরণ / সময়।</li> <li>অতএব, ঘণ্টার কাঁটার কৌণিক বেগ হবে: ω = 2π রেডিয়ান / 720 মিনিট = π/360 rad min⁻¹।</li> </ul> <p>সুতরাং, সঠিক উত্তর হলো (C) π/360 rad min⁻¹।</p>",
+        },
+        {
+          id: 11,
+          question:
+            "একটি বস্তু nm ব্যাসার্ধের বৃত্তাকার পথে 4.0 m/s সমদ্রুতিতে ঘুরছে। একবার ঘুরে আসতে বস্তুটির কত সময় লাগবে?",
+          options: {
+            A: "πr/2 s",
+            B: "πr/4 s",
+            C: "π/2 s",
+            D: "2/πr s",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি বস্তু বৃত্তাকার পথে সমদ্রুতিতে ঘুরলে, একবার ঘুরে আসতে যে সময় লাগে তাকে পর্যায়কাল (T) বলে।</p> <ul> <li>বস্তুটির বৃত্তাকার পথের ব্যাসার্ধ = r মিটার (এখানে 'nm' একটি টাইপো হতে পারে, এটিকে 'r' ধরে নেওয়া হয়েছে)।</li> <li>বস্তুটির সমদ্রুতি (v) = 4.0 m/s।</li> <li>একটি পূর্ণ বৃত্তাকার পথের পরিধি = 2πr।</li> <li>আমরা জানি, সময় = দূরত্ব / দ্রুতি।</li> <li>সুতরাং, পর্যায়কাল (T) = বৃত্তাকার পথের পরিধি / দ্রুতি।</li> <li>T = 2πr / 4.0 s।</li> <li>T = πr / 2 s।</li> </ul> <p>অতএব, সঠিক উত্তর হলো (A) πr/2 s।</p>",
+        },
+        {
+          id: 12,
+          question: "কেন্দ্রমুখী ত্বরণ a এর রাশিমালা কোনটি?",
+          options: {
+            A: "a = v²/r",
+            B: "a = ωr",
+            C: "a = r/ω²",
+            D: "a = ωr²",
+          },
+          correct: "A",
+          explanation:
+            "<p>কেন্দ্রমুখী ত্বরণ (Centripetal acceleration, a) হলো বৃত্তাকার পথে গতিশীল কোনো বস্তুর কেন্দ্রের দিকে ক্রিয়াশীল ত্বরণ। এর দিক সর্বদা বৃত্তাকার পথের কেন্দ্রের দিকে এবং এর মান রৈখিক বেগ (v) বা কৌণিক বেগ (ω) এর সাহায্যে প্রকাশ করা যায়।</p> <ul> <li>রৈখিক বেগ (v) এবং ব্যাসার্ধ (r) এর সাহায্যে কেন্দ্রমুখী ত্বরণের রাশিমালা হলো: a = v²/r।</li> <li>কৌণিক বেগ (ω) এবং ব্যাসার্ধ (r) এর সাহায্যে কেন্দ্রমুখী ত্বরণের রাশিমালা হলো: a = rω²।</li> <li>এখানে প্রদত্ত অপশন (A) a = v²/r হলো কেন্দ্রমুখী ত্বরণের একটি সঠিক রাশিমালা।</li> <li>অপশন (B) a = ωr হলো রৈখিক বেগের রাশিমালা, ত্বরণের নয়।</li> <li>অপশন (C) a = r/ω² ভুল।</li> <li>অপশন (D) a = ωr² ভুল।</li> </ul> <p>সুতরাং, সঠিক উত্তর হলো (A) a = v²/r।</p>",
+        },
+        {
+          id: 13,
+          question:
+            "একটি ঘড়ির সেকেন্ড, মিনিট ও ঘণ্টার কাঁটার কৌণিক বেগের অনুপাত কত?",
+          options: {
+            A: "720 : 60 : 1",
+            B: "1 : 60 : 720",
+            C: "1 : 12 : 720",
+            D: "720 : 12 : 1",
+          },
+          correct: "A",
+          explanation:
+            "<p>একটি ঘড়ির সেকেন্ড, মিনিট ও ঘণ্টার কাঁটার কৌণিক বেগের অনুপাত নির্ণয় করতে তাদের পর্যায়কাল (T) ব্যবহার করা হয়। কৌণিক বেগ (ω) = 2π / T। যেহেতু 2π একটি ধ্রুবক, তাই ω ∝ 1/T।</p> <ul> <li><b>সেকেন্ডের কাঁটা (ω<sub>s</sub>):</b><br>T<sub>s</sub> = 60 সেকেন্ড<br>ω<sub>s</sub> = 2π / 60 = π/30 rad/s</li> <li><b>মিনিটের কাঁটা (ω<sub>m</sub>):</b><br>T<sub>m</sub> = 60 মিনিট = 3600 সেকেন্ড<br>ω<sub>m</sub> = 2π / 3600 = π/1800 rad/s</li> <li><b>ঘণ্টার কাঁটা (ω<sub>h</sub>):</b><br>T<sub>h</sub> = 12 ঘণ্টা = 12 x 3600 = 43200 সেকেন্ড<br>ω<sub>h</sub> = 2π / 43200 = π/21600 rad/s</li> </ul> <p>এখন, কৌণিক বেগের অনুপাত ω<sub>s</sub> : ω<sub>m</sub> : ω<sub>h</sub> হবে:</p> <p>(π/30) : (π/1800) : (π/21600)</p> <p>উভয় পক্ষকে π দিয়ে ভাগ করে এবং সর্বনিম্ন সাধারণ গুণিতক 21600 দিয়ে গুণ করে পাই:</p> <p>(21600/30) : (21600/1800) : (21600/21600)</p> <p>720 : 12 : 1</p> <p>সুতরাং, সেকেন্ডের কাঁটা, মিনিটের কাঁটা ও ঘণ্টার কাঁটার কৌণিক বেগের অনুপাত হলো 720 : 12 : 1।</p>",
+        },
+        {
+          id: 14,
+          question: "ঘড়ির মিনিটের কাঁটার দৈর্ঘ্য কমলে-",
+          options: {
+            A: "রৈখিক বেগ বাড়ে, কৌণিক বেগ বাড়ে",
+            B: "রৈখিক বেগ কমে, কৌণিক বেগ কমে",
+            C: "রৈখিক বেগ স্থির থাকে, কৌণিক বেগ বাড়ে",
+            D: "রৈখিক বেগ কমে, কৌণিক বেগ স্থির থাকে",
+          },
+          correct: "D",
+          explanation:
+            "<p>একটি ঘড়ির কাঁটার গতি একটি নির্দিষ্ট পর্যায়কাল মেনে চলে। মিনিটের কাঁটার ক্ষেত্রে, এর পর্যায়কাল (T) সর্বদা 60 মিনিট বা 3600 সেকেন্ড।</p> <ul> <li><b>কৌণিক বেগ (ω):</b> কৌণিক বেগ হলো ω = 2π / T। যেহেতু মিনিটের কাঁটার পর্যায়কাল (T) দৈর্ঘ্যের উপর নির্ভর করে না এবং সর্বদা স্থির থাকে (60 মিনিট), তাই মিনিটের কাঁটার দৈর্ঘ্য কমলেও এর কৌণিক বেগ অপরিবর্তিত থাকবে।</li> <li><b>রৈখিক বেগ (v):</b> রৈখিক বেগ হলো v = rω, যেখানে r হলো কাঁটার দৈর্ঘ্য (ব্যাসার্ধ)। যেহেতু মিনিটের কাঁটার দৈর্ঘ্য কমে যাচ্ছে (r কমছে) এবং এর কৌণিক বেগ (ω) স্থির থাকছে, তাই রৈখিক বেগ (v) কমে যাবে।</li> </ul> <p>সুতরাং, ঘড়ির মিনিটের কাঁটার দৈর্ঘ্য কমলে রৈখিক বেগ কমে এবং কৌণিক বেগ স্থির থাকে।</p>",
+        },
+        {
+          id: 15,
+          question:
+            "বৃত্তাকার পথে সমান সময়ে সমান কৌণিক দূরত্ব অতিক্রমকারী কোনো কণার রৈখিক বেগের-",
+          options: {
+            A: "শুধু মানের পরিবর্তন হবে",
+            B: "ধ্রুবক হবে",
+            C: "শুধু দিকের পরিবর্তন হবে",
+            D: "মান ও দিক উভয়ই পরিবর্তিত হবে",
+          },
+          correct: "C",
+          explanation:
+            "<p>যখন কোনো কণা বৃত্তাকার পথে সমান সময়ে সমান কৌণিক দূরত্ব অতিক্রম করে, তখন এর অর্থ হলো কণাটির কৌণিক বেগ (angular velocity) ধ্রুবক। এমন গতিকে সুষম বৃত্তাকার গতি (Uniform Circular Motion) বলা হয়।</p> <ul> <li><b>রৈখিক বেগের মান (Magnitude):</b> সুষম বৃত্তাকার গতিতে কণার রৈখিক বেগের মান (দ্রুতি) ধ্রুবক থাকে। অর্থাৎ, কণাটি সর্বদা একই দ্রুতিতে চলে।</li> <li><b>রৈখিক বেগের দিক (Direction):</b> যদিও রৈখিক বেগের মান ধ্রুবক থাকে, এর দিক প্রতিনিয়ত পরিবর্তিত হয়। বৃত্তাকার পথের প্রতিটি বিন্দুতে রৈখিক বেগের দিক সেই বিন্দুর স্পর্শক বরাবর (tangential) হয়। যেহেতু কণাটি বৃত্ত বরাবর ঘুরছে, তাই তার বেগের দিকও প্রতিনিয়ত পরিবর্তিত হচ্ছে।</li> </ul> <p>সুতরাং, বৃত্তাকার পথে সমান সময়ে সমান কৌণিক দূরত্ব অতিক্রমকারী কোনো কণার রৈখিক বেগের <b>শুধু দিকের পরিবর্তন হবে</b>।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                              <div class="circle">${option}</div>
+                                              <span class="option-text">${question.options[option]}</span>
+                                            </label>
+                                          `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                               <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                               <div class="explanation-content">
+                                                 <div class="explanation-label">ব্যাখ্যা:</div>
+                                                 ${question.explanation}
+                                               </div>
+                                             </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                          <p class="question-label">${
+                                            index + 1
+                                          }. ${question.question}</p>
+                                          <div class="options">
+                                            ${optionsHTML}
+                                          </div>
+                                          ${explanationHTML}
+                                        `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
